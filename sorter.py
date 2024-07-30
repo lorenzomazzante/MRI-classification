@@ -1,0 +1,65 @@
+import numpy as np
+import tf_keras
+import os
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from sklearn.model_selection import train_test_split
+from functions import testing_model
+
+directory = "brain_tumor_dataset"
+
+images = []
+labels = []
+
+# Recorro el directorio y leo las imágenes
+for category in os.listdir(directory):
+    rute_category = os.path.join(directory, category)
+    for image_name in os.listdir(rute_category):
+        image_rute = os.path.join(rute_category, image_name)
+        # Leo la imagen
+        image = load_img(image_rute, target_size=(224,224))
+        image_array = img_to_array(image) / 255.0  # Normalizo la imagen
+        images.append(image_array)
+        # Asigno la etiqueta (0 para "no" y 1 para "yes")
+        labels.append(1 if category == "yes" else 0)
+
+# Convierto las listas en matrices numpy
+images = np.array(images)
+labels = np.array(labels)
+
+# Divido los datos en conjuntos de entrenamiento y validación
+X_training, X_testing, y_training, y_testing = train_test_split(images, labels, test_size=0.3, random_state=42)
+
+## Verifico las dimensiones de los conjuntos de datos
+#print("Dimensiones de X_entrenamiento:", X_training.shape)
+#print("Dimensiones de X_prueba:", X_testing.shape)
+#print("Dimensiones de y_entrenamiento:", y_training.shape)
+#print("Dimensiones de y_prueba:", y_testing.shape)
+
+
+import tensorflow_hub as hub
+url = "https://tfhub.dev/google/imagenet/mobilenet_v2_140_224/feature_vector/5"
+
+movilenetv2 = hub.KerasLayer(url, input_shape=(224,224,3))
+
+movilenetv2.trainable = False
+
+model = tf_keras.Sequential([
+    movilenetv2,
+    tf_keras.layers.Dense(2,activation="softmax")
+])
+
+model.summary()
+
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics = ["accuracy"]
+)
+training = model.fit(
+    X_training,
+    y_training,
+    epochs=20,
+    validation_data = (X_testing, y_testing)
+)
+
+testing_model(model)
