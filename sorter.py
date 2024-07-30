@@ -3,7 +3,8 @@ import tf_keras
 import os
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from sklearn.model_selection import train_test_split
-from functions import testing_model
+#from functions import testing_model
+from functions import predict_and_save
 
 directory = "brain_tumor_dataset"
 
@@ -62,4 +63,9 @@ training = model.fit(
     validation_data = (X_testing, y_testing)
 )
 
-testing_model(model)
+#testing_model(model)
+
+image_path = "C:/Users/Mariano/Documents/Lorenzo/Boludines/MRI - clasification/aplication/image_to_analyze.jpg"
+output_path = "C:/Users/Mariano/Documents/Lorenzo/Boludines/MRI - clasification/aplication/output.jpg"
+
+predict_and_save(image_path,model,output_path)
