@@ -1,10 +1,9 @@
 import numpy as np
-import tf_keras
+import tensorflow as tf
+import tensorflow_hub as hub
+import tf_keras as tfk
 import os
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from sklearn.model_selection import train_test_split
-#from functions import testing_model
-from functions import predict_and_save
 
 directory = "brain_tumor_dataset"
 
@@ -17,8 +16,8 @@ for category in os.listdir(directory):
     for image_name in os.listdir(rute_category):
         image_rute = os.path.join(rute_category, image_name)
         # Leo la imagen
-        image = load_img(image_rute, target_size=(224,224))
-        image_array = img_to_array(image) / 255.0  # Normalizo la imagen
+        image = tf.keras.preprocessing.image.load_img(image_rute, target_size=(224,224))
+        image_array = tf.keras.preprocessing.image.img_to_array(image) / 255.0  # Normalizo la imagen
         images.append(image_array)
         # Asigno la etiqueta (0 para "no" y 1 para "yes")
         labels.append(1 if category == "yes" else 0)
@@ -30,26 +29,14 @@ labels = np.array(labels)
 # Divido los datos en conjuntos de entrenamiento y validación
 X_training, X_testing, y_training, y_testing = train_test_split(images, labels, test_size=0.3, random_state=42)
 
-## Verifico las dimensiones de los conjuntos de datos
-#print("Dimensiones de X_entrenamiento:", X_training.shape)
-#print("Dimensiones de X_prueba:", X_testing.shape)
-#print("Dimensiones de y_entrenamiento:", y_training.shape)
-#print("Dimensiones de y_prueba:", y_testing.shape)
-
-
-import tensorflow_hub as hub
 url = "https://tfhub.dev/google/imagenet/mobilenet_v2_140_224/feature_vector/5"
 
-movilenetv2 = hub.KerasLayer(url, input_shape=(224,224,3))
+movilenetv2 = hub.KerasLayer(url, input_shape=(224,224,3), trainable=False)
 
-movilenetv2.trainable = False
-
-model = tf_keras.Sequential([
+model = tfk.Sequential([
     movilenetv2,
-    tf_keras.layers.Dense(2,activation="softmax")
+    tfk.layers.Dense(2,activation="softmax")
 ])
-
-model.summary()
 
 model.compile(
     optimizer="adam",
@@ -59,13 +46,8 @@ model.compile(
 training = model.fit(
     X_training,
     y_training,
-    epochs=20,
+    epochs=1,
     validation_data = (X_testing, y_testing)
 )
 
-#testing_model(model)
-
-image_path = "C:/Users/Mariano/Documents/Lorenzo/Boludines/MRI - clasification/aplication/image_to_analyze.jpg"
-output_path = "C:/Users/Mariano/Documents/Lorenzo/Boludines/MRI - clasification/aplication/output.jpg"
-
-predict_and_save(image_path,model,output_path)
+model.save("my_model.h5")
